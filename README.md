@@ -55,44 +55,71 @@ Demo planned at the poster session:
 we will prepare a poster that includes the performance of our network model run on different numbers of cores with various iteration values. In the optimal case, our model will provide a significant speedup while parameters are changing.
 
 Our background problem tends to be an optimization problem due to the fact that the network is almost completely randomized, the workload among different processors could be significantly imbalanced. Moreover, each processor is dependent on the information sent by the other processors and is dependent on the node list sent by the master processor. There is memory accessed by the master at the start and end of the program and there might be one master copy of nodes’ preferences lists/ evaluation lists in the master process (but that will depend on the tradeoff between the number of communications and the size of each communication).  Thus, we will construct our parallelized algorithm to predict how many nodes are connected to our neighbor nodes to avoid too much communication. The workload imbalance between processors and the reduction of communication cost are the two most important challenges we will face. In this case, hopefully our algorithm will achieve at least 35x compared to single-core sequential algorithm. 
+
 Section 6: Platform Choice:
 GHC and PSC with multicores will be used as our machine to run the program since they can provide at maximum 128 cores, which provides us with the capability to measure the performance of the program on various configurations. We use C++ as main programming language since we need to MPI to apply multicore parallelism and C++ will best support those resources that we are going to use on our model
+
 Section 7: Schedule
 The course schedule is organized as:
+
 —-------------------------------------—--------------------------------------
+
 Description Due When
 Discuss Ideas with Instructors Mon/Wed, March 27/29, 9:30-11:00 am 
 Project Proposal Due Fri, March 31, 11:59pm 
 Milestone Report Due Wed, April 19, 9:00am 
 Final Report Due Thu, May 4, 11:59pm 
 Poster Session Fri, May 5, 8:30am or 1:00pm
-—--------------------------------------
+
+—------------------------------------------------------------------------------
+
 Based on the course schedule, we decide to work on our final project following such timeline:
 
 
-
 Meeting 1 (Mon.)
+
 Meeting 2 (Thurs.)
+
 Instructor Communication (Wed.)
+
 W1(Mar 31st to Apr. 7th)
+
 Finish the final project proposal, decide main focus of the project, and assign work to each week
+
 Search for resources (papers/ relevant open-source project information) and perform different ideations and decide which one to work on
+
 Discuss various ideations with instructors during OH and ask for their advice (which model could be better to implement and if any other resources/APIs could be considered when implementing the model
+
 W2(Apr.10th to Apr. 14th)
+
 Implement basic structure of the model with available resources and discuss obstacles encountered, and prepare to implement the whole model and start Milestone Report
+
 Done with the general model implementation as first prototype and recheck the defects of the model, think about possible ways of optimization while starting performance testing 
+
 Show the first prototype to instructors and ask for their advice and possible ways to optimize. Again, think about any more resources that can be added to the prototype during future optimization periods. Moreover, ask about any other aspects of program could be tested but not considered yet
+
 W3(Apr. 17th to Apr. 21th)
+
 Optimizing the first prototype and complete second version of model with performance test and brainstorm other possible ways of optimization and submit Milestone Report
+
 Finish second prototype and refine the model to final version with advice from instructors and start writing poster and final report
+
 Ask instructors for help on optimizing the second prototype and maybe more ways of testing and optimization
+
 W4(Apr. 24th to Apr. 28th)
+
 Test final performance/ improvements brought by our model and write the report and design poster, finishing it before meeting instructors
+
 Refine final report based on advice given by instructors and redesign the poster according to final report of new version
+
 Check details of report and poster with instructors and ask for advice on refining 
+
 W5(May 1st to May 5th)
+
 Ready to submit the final report 
+
 Finish the poster
+
 Final advice on poster and check if anything needs to be changed
 
 
