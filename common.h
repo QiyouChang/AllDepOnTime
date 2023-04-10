@@ -38,13 +38,13 @@ inline StartupOptions parseOptions(int argc, char *argv[]) {
 struct Connection{
     int friendID;
     float like;
-}
+};
 
 struct People {
     int id;
     float eval; 
     std::vector<Connection> conn;
-}
+};
 
 inline People randomizedPeople(const People &pi, float score, int addNum, int deleteNum, int totalNumPeople){
     //drop some connection and add some connection 
@@ -74,7 +74,7 @@ inline bool loadFromFile(std::string fileName,
         conn.like = str.substr(pos+1, size-pos-1);
         population.push_back(conn);
     }
-    people.id = (int)population.size();
+    person.id = (int)population.size();
   }
   return true;
 }
