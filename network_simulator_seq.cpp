@@ -3,7 +3,19 @@
 #include <iostream>
 
 void simulateStep(std::vector<People> population){
+    // Sequential Implementation that simply computes all weights of people 
+    // and try adding them together
+    int total = population.size();
 
+    //Iterate all people within the population and sum up all of likes and update it to others
+    for (People person:population){
+        std::vector<Connection> connections = person.conn;
+        float change = 0.f;
+        for(Connection individual: connections){
+            change += individual.like;
+        }
+        person.eval += change;
+    }
 }
 
 
