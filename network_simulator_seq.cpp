@@ -1,49 +1,67 @@
 #include "common.h"
 #include "timing.h"
 #include <iostream>
+#include "mpi.h"
+#include <vector>
+#include <string>
 
-void simulateStep(std::vector<People> population){
+//hyperparameters
+std::string inputFile = "./benchmark_files/sample1.txt";
+std::string outputFile = "./seqOutputv1.txt";
+std::string outputResult = "./seqResultv1.txt";
+int numIterations = 5;
+float discount = 0.9;
+
+
+std::vector<People> simulateStep(std::vector<People> &population){
     // Sequential Implementation that simply computes all weights of people 
     // and try adding them together
     int total = population.size();
-
+    
     //Iterate all people within the population and sum up all of likes and update it to others
-    for (People person:population){
+    //for (People person:population){
+    for(size_t i = 0; i < total; i ++){
+        People person = population[i];
         std::vector<Connection> connections = person.conn;
         float change = 0.f;
         for(Connection individual: connections){
             change += individual.like;
         }
-        person.eval += change;
+        //std::cerr<< "before of simulate Step " <<  person.eval << "\n";
+        population[i].eval += change;
+        //person.eval += change;
+        //std::cerr<< "after of simulate Step " <<  person.eval << "\n";
     }
+    return population;
 }
-
 
 int main(int argc, char *argv[]) {
     int pid;
     int nproc;
-    MPI_Status status;
-    MPI_Comm comm = MPI_COMM_WORLD;
-
+    // MPI_Status status;
+    // MPI_Comm comm = MPI_COMM_WORLD;
+     std::cerr << "reach here!" << "\n";
     // Initialize MPI
     MPI_Init(&argc, &argv);
     // Get process rank
     MPI_Comm_rank(MPI_COMM_WORLD, &pid);
     // Get total number of processes specificed at start of run
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
-    StartupOptions options = parseOptions(argc, argv);
+    //StartupOptions options = parseOptions(argc, argv);
     std::vector<People> population;
     if (pid == 0) {
-        loadFromFile(options.inputFile, population);
-    }
+        //loadFromFile(options.inputFile, population);
+        loadFromFile(inputFile, population);
+   }
     //TO DO: fill in the steps
-    for (int i = 0; i < options.numIterations; i++) {
-        simulateStep(population);
-
+    for (int i = 0; i < numIterations; i++) {
+        population = simulateStep(population);
     }
 
     if(pid == 0){
-        saveToFile(options.outputFile, population);
+        //saveToFile(options.outputFile, population);
+        saveToFile(outputFile, population);
+        saveToResult(outputResult, population);
     }
-
+    MPI_Finalize();
 }
