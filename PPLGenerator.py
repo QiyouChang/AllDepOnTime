@@ -9,7 +9,7 @@ def Generation(total, graph_type):
     if graph_type == "D":
         total_connections = random.randint(total*(total-1), total*total+1)
         for round in range(total_connections):
-            u, v = random.randint(0, total), random.randint(0,total)
+            u, v = random.randint(0, total-1), random.randint(0,total-1)
             uv_weight = random.gauss(mu=0.0, sigma=1.0)
             vu_weight = random.gauss(mu=0.0, sigma=1.0)
             popMat[u,v] = uv_weight
@@ -21,7 +21,7 @@ def Generation(total, graph_type):
             u = 0
             v = 0
             while u == v:
-                u, v = random.randint(0, total), random.randint(0,total)
+                u, v = random.randint(0, total-1), random.randint(0,total-1)
             uv_weight = random.gauss(mu=0.0, sigma=1.0)
             vu_weight = random.gauss(mu=0.0, sigma=1.0)
             popMat[u,v] = uv_weight
@@ -31,7 +31,8 @@ def Generation(total, graph_type):
 if __name__ == '__main__':
     data_output = sys.argv[1]
     total_population = sys.argv[2]
-    graph_type = sys.argv[2]
-    Result_G = Generation(total_population,graph_type)
+    graph_type = sys.argv[3]
+    print(graph_type)
+    Result_G = Generation(int(total_population),graph_type)
     np.savetxt(data_output, Result_G, delimiter=",")
     
