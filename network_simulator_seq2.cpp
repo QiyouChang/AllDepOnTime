@@ -15,20 +15,6 @@ std::string outputResult = "./seqResultv2.txt";
 #define DR 0.9
 #define Required_Deg 2
 
-// float recursive_eval (int j, std::vector<People> &population, std::set<int> idset, float change, int curr_deg){
-//     if (curr_deg == Required_Deg){
-//         change += population[j].eval*pow(DR,curr_deg);
-//     }else{
-//         People person = population[j];
-//         change += person.eval*pow(DR,curr_deg);
-//         std::vector<Connection> connections = person.conn;
-//         for (size_t i = 0 ; i < connections.size(); j++){
-//             change = recursive_eval(i, population, idset, change, curr_deg+1);
-//         }
-//     }
-//     return change;
-// }
-
 float BFS_All(std::set<int> frontier, std::set<int> visited, std::vector<People> &population, float change, int curr_deg){
     if ((frontier.size() == 0) || (curr_deg == Required_Deg)){
         //std::cerr<< "the change is: " << change<< "\n";
