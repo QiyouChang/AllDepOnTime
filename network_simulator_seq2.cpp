@@ -1,4 +1,3 @@
-
 #include "common.h"
 #include "timing.h"
 #include <iostream>
@@ -79,6 +78,9 @@ int main(int argc, char *argv[]) {
         //loadFromFile(options.inputFile, population);
         loadFromFile(inputFile, population);
     }
+
+
+    Timer totalSimulationTimer;
     //TO DO: fill in the steps
     for (int i = 0; i < numIterations; i++) {
         population = simulateStep(population);
@@ -87,6 +89,8 @@ int main(int argc, char *argv[]) {
 
     if(pid == 0){
         //saveToFile(options.outputFile, population);
+        double totalSimulationTime = totalSimulationTimer.elapsed();
+        printf("total simulation time: %.6fs\n", totalSimulationTime);
         saveToFile(outputFile, population);
         saveToResult(outputResult, population);
     }
