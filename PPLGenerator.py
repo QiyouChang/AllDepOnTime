@@ -10,8 +10,8 @@ def Generation(total, graph_type):
         total_connections = random.randint(total*(total-1), total*total+1)
         for round in range(total_connections):
             u, v = random.randint(0, total-1), random.randint(0,total-1)
-            uv_weight = random.gauss(mu=0.0, sigma=1.0)
-            vu_weight = random.gauss(mu=0.0, sigma=1.0)
+            uv_weight = random.gauss(mu=0.0, sigma=0.3)
+            vu_weight = random.gauss(mu=0.0, sigma=0.3)
             popMat[u,v] = uv_weight
             popMat[v,u] = vu_weight
     elif graph_type == "S":
@@ -22,8 +22,8 @@ def Generation(total, graph_type):
             v = 0
             while u == v:
                 u, v = random.randint(0, total-1), random.randint(0,total-1)
-            uv_weight = random.gauss(mu=0.0, sigma=1.0)
-            vu_weight = random.gauss(mu=0.0, sigma=1.0)
+            uv_weight = random.gauss(mu=0.0, sigma=0.3)
+            vu_weight = random.gauss(mu=0.0, sigma=0.3)
             popMat[u,v] = uv_weight
             popMat[v,u] = vu_weight
     return popMat
