@@ -10,7 +10,7 @@
 std::string inputFile = "./sample1.txt";
 std::string outputFile = "./seqOutputv3.txt";
 std::string outputResult = "./seqResultv3.txt";
-#define numIterations 10
+#define numIterations 5
 #define DR 0.9
 #define Required_Deg 2
 
@@ -22,7 +22,7 @@ bool check_frontier(int *frontier, int length){
 }
 
 
-std::vector<People> simulateStep(std::vector<People> &population, int pid, int nproc, int childsize){
+std::vector<float> simulateStep(std::vector<People> &population, std::vector<float> &eval_collection, int pid, int nproc, int childsize){
     int total = population.size();
     MPI_Comm comm = MPI_COMM_WORLD;
 
@@ -35,17 +35,20 @@ std::vector<People> simulateStep(std::vector<People> &population, int pid, int n
 
     int displs2[nproc];
     int recvcounts2[nproc];
-    std::fill_n(recvcounts, nproc, 1);
+    std::fill_n(recvcounts2, nproc, 1);
     for (int i = 0; i < nproc; i++){
         displs2[i] = (i == 0) ? 0 : recvcounts2[i-1]+displs2[i-1];
     }
-    
+
+
+
     for (int i = 0; i < total; i++){
         int curr_deg = 0;
         float change = 0.f;
         int node_id = population[i].id;
-        
+
         int *frontier = (int*)calloc(total, sizeof(int)); //check initialization value
+        int *temp_frontier = (int*)calloc(total, sizeof(int));
         int *total_visited = (int*)calloc(total, sizeof(int));
         int *total_frontier = (int*)calloc(total*nproc, sizeof(int));
         float *array_change = (float*)calloc(nproc, sizeof(float));
@@ -53,56 +56,66 @@ std::vector<People> simulateStep(std::vector<People> &population, int pid, int n
         float total_change = 0.f;
 
         frontier[i] = 1;
-        
+        MPI_Barrier(MPI_COMM_WORLD);
+
         while ((curr_deg != Required_Deg) && (check_frontier(frontier, total))){
-            for (int index_inf = 0; index_inf < total; index_inf++){
-                // vertex exists in frontier
-                total_visited[index_inf] = 1;
+            for (int first = 0; first<total ; first++){
+                std::cerr<<"visited: "<<first << " ? "<< frontier[first] << std::endl;
+                if (frontier[first]){
+                total_visited[first] = 1;
+            }
+            }
+
+            for (int index_inf = 0; index_inf < total; index_inf++){     
+
                 if ((index_inf>=pid*childsize )&& (index_inf<(pid+1)*childsize)){
-                    if (frontier[index_inf]){
+                        if(frontier[index_inf]){
                         std::vector<Connection> conn = population[index_inf].conn;
                         // check all connections
                         for (Connection person: conn){
                             // add to frontier if connections are not visited
-                            if (!total_visited[person.friendID]){
+                            if ((!total_visited[person.friendID])&&(person.like!=0.f)){
+                                //std::cerr<<"change before: "<< change <<"; pow(DR, curr_deg)"<<pow(DR, curr_deg)<<"; person.like"<<person.like << "; population[person.friendID].eval: "<< population[person.friendID].eval<< std::endl;
                                 change += pow(DR, curr_deg)*person.like*(population[person.friendID].eval);
-                                frontier[person.friendID] = 1;
-                            } 
+                                temp_frontier[person.friendID] = 1;
+                                if(i==0) std::cerr<<"connection person.friendID "<< person.friendID << std::endl;
+                            }
+                        }
                         }
                     }
+                    frontier[index_inf] = 0;
                 }
-                frontier[index_inf] = 0;
-            }
-
+                
 
             //synchronization new frontier and change
-            std::cerr << __LINE__ << std::endl;
-            for (int j = 0; j < total; j++){
-                std::cerr<< frontier[j] << std::endl;
-            }
-            MPI_Allgatherv(&frontier, total, MPI_INT, &total_frontier, 
+
+            MPI_Allgatherv(temp_frontier, total, MPI_INT, total_frontier,
             recvcounts, displs, MPI_INT, comm);
-            std::cerr << total << std::endl;
             //filter out the repetition in new fronitier and form actual frontier
             for (int fi = 0; fi < total*nproc; fi++){
-                if(total_frontier[fi]) frontier[fi%total] = 1;
+                if(total_frontier[fi]&&(!total_visited[fi])){
+                    frontier[fi%total] = 1;
+                } 
+                temp_frontier[fi%total] = 0;
             }
             MPI_Barrier(MPI_COMM_WORLD);
+            curr_deg += 1;
         }
 
         // sum up all possible values
-        MPI_Allgatherv(&change, 1, MPI_INT, &array_change, 
+        MPI_Allgatherv(&change, 1, MPI_INT, array_change,
         recvcounts2, displs2, MPI_INT, comm);
         for(int si = 0; si < nproc; si ++){
             total_change += array_change[si];
             }
-
-
-        population[i].eval = population[i].eval + change;
-        //Synchronize update 
+        std::cerr<< "total change: "<< total_change<<std::endl;
+        eval_collection[i] = population[i].eval + total_change;
+        //Synchronize update
 
     }
-    return population;
+
+
+    return eval_collection;
 }
 
 
@@ -125,9 +138,12 @@ int main(int argc, char *argv[]) {
     int displs[nproc];
     int recvcounts[nproc];
     std::vector<People> population;
-    
+
     //load from input file
     loadFromFile(inputFile, population);
+
+    std::vector<float> eval_collection;
+    eval_collection.resize(population.size());
 
     // int num_rows = sqrt(total);
     // int num_cols = sqrt(total);
@@ -136,15 +152,21 @@ int main(int argc, char *argv[]) {
     // int rows_per_proc = num_rows/NforRC;
     // int cols_per_proc = num_rows/NforRC;
 
-    int childsize = total/nproc;
+    int childsize = population.size()/nproc;
 
     Timer totalSimulationTimer;
-    
-    for (int i = 0; i < numIterations; i++){
-        population = simulateStep(population, pid, nproc, childsize);
-        // MPI_Allgatherv(eval_sample.data(), childsize, MPI_FLOAT, eval_collection.data(), 
-        // recvcounts, displs, MPI_FLOAT, comm);
 
+    for (int i = 0; i < numIterations; i++){
+        eval_collection = simulateStep(population, eval_collection, pid, nproc, childsize);
+        // MPI_Allgatherv(eval_sample.data(), childsize, MPI_FLOAT, eval_collection.data(),
+        // recvcounts, displs, MPI_FLOAT, comm);
+    //     for(int m = 0; m< total; m++){
+    //     std::cerr<<eval_collection[m]<< std::endl;
+    // }
+
+        for (int j = 0; j < population.size(); j++){
+            population[j].eval = eval_collection[j];
+        }
 
     }
 
