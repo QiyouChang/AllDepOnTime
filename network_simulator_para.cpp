@@ -10,7 +10,7 @@
 std::string inputFile = "./sample1.txt";
 std::string outputFile = "./seqOutputv1.txt";
 std::string outputResult = "./seqResultv1.txt";
-#define numIterations 10
+#define numIterations 5
 #define DR 0.9
 #define Required_Deg 2
 
@@ -21,7 +21,6 @@ float BFS_All(std::set<int> frontier, std::set<int> visited, std::vector<People>
         return change;
     }else{
         
-        //std::cerr<< "Ever reached here?";
         size_t size = frontier.size();
 
         //pop the top person
@@ -38,7 +37,11 @@ float BFS_All(std::set<int> frontier, std::set<int> visited, std::vector<People>
         for (size_t i = 0 ; i < connections.size(); i++){
                 if ((visited.find(connections[i].friendID)==visited.end())&& (connections[i].like!=0.f)){
                         frontier.insert(connections[i].friendID);
+                        //std::cerr<<"change before: "<< change <<"; pow(DR, curr_deg)"<<pow(DR, curr_deg)<<"; person.like"<<connections[i].like << "; eval_collection[connections[i].friendID] "<< eval_collection[connections[i].friendID]<< std::endl;
                         change += pow(DR, curr_deg)*connections[i].like*(eval_collection[connections[i].friendID]);
+                        std::cerr<<"connection person.friendID "<< connections[i].friendID << std::endl;
+                        // std::cerr<< change << std::endl;
+                        //std::cerr<<"change after: "<< change << std::endl;
                         //change += connections[i].like;
                     }
                 }
@@ -59,7 +62,7 @@ std::vector<float> simulateStep(std::vector<People> &population, std::vector<flo
         std::set<int> frontier = {population[index].id};
 
         change = BFS_All(frontier, visited, population, eval_sample, eval_collection, change, 0, pid);
-
+        std::cerr<< "total change: "<< change  << std::endl;
         eval_sample[i] = eval_collection[index] + change;
         //Synchronize update 
 
