@@ -10,12 +10,12 @@
 std::string inputFile = "./sample1.txt";
 std::string outputFile = "./seqOutputv2.txt";
 std::string outputResult = "./seqResultv2.txt";
-#define numIterations 10
+#define numIterations 5
 #define DR 0.9
 #define Required_Deg 2
 
 
-float BFS_All(std::set<int> frontier, std::set<int> visited, std::vector<People> &population, float change, int curr_deg){
+float BFS_All(std::set<int> frontier, std::set<int> visited, std::vector<People> &population, float change, int curr_deg, std::vector<int> &dg_arr){
     if ((frontier.size() == 0) || (curr_deg == Required_Deg)){
         //std::cerr<< "the change is: " << change<< "\n";
         return change;
@@ -36,13 +36,14 @@ float BFS_All(std::set<int> frontier, std::set<int> visited, std::vector<People>
         std::vector<Connection> connections = person.conn;
 
         for (size_t i = 0 ; i < connections.size(); i++){
-                if ((visited.find(connections[i].friendID)==visited.end())&& (connections[i].like!=0.f)){
+                if ((visited.find(connections[i].friendID)==visited.end())&& (connections[i].like!=0.f)&&(dg_arr[i]==-1)){
+                        dg_arr[i] = curr_deg;
                         frontier.insert(connections[i].friendID);
                         change += pow(DR, curr_deg)*connections[i].like*(population[connections[i].friendID].eval);
                         //change += connections[i].like;
                     }
                 }
-        return BFS_All(frontier, visited, population, change, curr_deg+1);
+        return BFS_All(frontier, visited, population, change, curr_deg+1, dg_arr);
 
     //     for (int turn = 0; turn < size; turn++){
 
@@ -74,10 +75,15 @@ std::vector<float> simulateStep(std::vector<People> &population, std::vector<flo
     int total = population.size();
     for(int i = 0; i < total; i ++){
         float change = 0.f;
+        std::vector<int> dg_arr;
+        dg_arr.resize(total);
+        for (int j = 0; j < total; j++){
+            dg_arr[j] = j==i ? 0 : -1;
+        }
         People person = population[i];
         std::set<int> visited = {};
         std::set<int> frontier = {person.id};
-        change = BFS_All(frontier, visited, population, change, 0);
+        change = BFS_All(frontier, visited, population, change, 0, dg_arr);
         //printf("%f, %f, %f, %f\n",change, eval_collection[i], population[i].conn[0].like, population[i].conn[1].like);
         eval_collection[i] = population[i].eval + change;
         //Asynchronize Update
