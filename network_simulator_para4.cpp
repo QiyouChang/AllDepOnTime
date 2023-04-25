@@ -6,21 +6,23 @@
 #include <string>
 #include <cmath>
 #include <set>
+#include <queue>
 
 std::string inputFile = "./sample1.txt";
-std::string outputFile = "./seqOutputv1.txt";
-std::string outputResult = "./seqResultv1.txt";
-#define numIterations 5
+std::string outputFile = "./seqOutputv4.txt";
+std::string outputResult = "./seqResultv4.txt";
+#define numIterations 10
 #define DR 0.9
 #define Required_Deg 2
 
-float BFS_All(std::set<int> frontier, std::set<int> visited, std::vector<People> &population,std::vector<float> &eval_sample, std::vector<float> &eval_collection, float change, int curr_deg, int pid, std::vector<int> &dg_arr){
+float BFS_All(std::set<int> frontier, std::set<int> visited, std::vector<People> &population,std::vector<float> &eval_sample, std::vector<float> &eval_collection, float change, int curr_deg, int pid){
     
    if ((frontier.size() == 0) || (curr_deg == Required_Deg)){
         //std::cerr<< "the change is: " << change<< "\n";
         return change;
     }else{
         
+        //std::cerr<< "Ever reached here?";
         size_t size = frontier.size();
 
         //pop the top person
@@ -35,46 +37,116 @@ float BFS_All(std::set<int> frontier, std::set<int> visited, std::vector<People>
         std::vector<Connection> connections = person.conn;
 
         for (size_t i = 0 ; i < connections.size(); i++){
-                if ((visited.find(connections[i].friendID)==visited.end())&& (connections[i].like!=0.f)&&(dg_arr[i]==-1)){
+                if ((visited.find(connections[i].friendID)==visited.end())&& (connections[i].like!=0.f)){
                         frontier.insert(connections[i].friendID);
-                        //std::cerr<<"change before: "<< change <<"; pow(DR, curr_deg)"<<pow(DR, curr_deg)<<"; person.like"<<connections[i].like << "; eval_collection[connections[i].friendID] "<< eval_collection[connections[i].friendID]<< std::endl;
-<<<<<<< HEAD
-                        dg_arr[i] = curr_deg;
-=======
->>>>>>> 278e315b00d9b9b9d22aed3ecb0165814e3285ac
                         change += pow(DR, curr_deg)*connections[i].like*(eval_collection[connections[i].friendID]);
-                        std::cerr<<"connection person.friendID "<< connections[i].friendID << std::endl;
-                        // std::cerr<< change << std::endl;
-                        //std::cerr<<"change after: "<< change << std::endl;
                         //change += connections[i].like;
                     }
                 }
 
-       return BFS_All(frontier, visited, population, eval_sample, eval_collection,change, curr_deg+1, pid, dg_arr);
+       return BFS_All(frontier, visited, population, eval_sample, eval_collection,change, curr_deg+1, pid);
     }
 }
 
+bool peopleWorkComparison(const People &a, const People &b){
+    return a.conn.size() < b.conn.size();
+}
+
+
+struct procPeople{
+    int procID;
+    int size;
+    std::vector<People> peoples;
+};
+
+class Compare{
+public:
+    bool operator()(const procPeople &a, const procPeople &b){
+        return a.procID < b.procID;
+    }
+};
+
+
+template<typename T>
+std::vector<T> flatten(std::vector<std::vector<T>> const &vec)
+{
+    std::vector<T> flattened;
+    for (auto const &v: vec) {
+        flattened.insert(flattened.end(), v.begin(), v.end());
+    }
+    return flattened;
+}
+
+
+// Input: population: the list of people read from file 
+// Input: number of processors 
+// Output: recvCounts: the recvCounts used to distribute people to processors later 
+// Output: newPopulation: list of people where people assigned to same processor is next to each other
+void prediction(std::vector<People> &population,int nproc, std::vector<int> &recvCounts, std::vector<People> &newPopulation){
+    int workEstimate[population.size()];//work estimate of 2d separation for a person
+    int numFriend[population.size()];  //work estimate of a single person 1d separation
+    //run the 1d work estimation
+    for(int i = 0; i < population.size(); i++){
+        People p = population[i];
+        numFriend[i] = p.conn.size();
+        workEstimate[i] = p.conn.size();
+    }
+    //also see how much work friends of a person has to predict the overall work a person's BFS might require
+    for(int j = 0; j < population.size(); j++){
+        People p = population[j];
+        std::vector<Connection> cn = p.conn;
+        for(int k = 0; k < cn.size(); k++){
+            workEstimate[j] += numFriend[cn[k].friendID];
+        }
+    }
+
+    //sort the population based on work
+    std::sort(population.begin(), population.end(), &peopleWorkComparison);
+    
+    std::priority_queue<procPeople, std::vector<procPeople>, Compare> priorityQueue;
+    for(int i = 0; i < nproc; i++){
+        People p = population[i];
+        std::vector<People> currentProcPeople = {p};
+        procPeople currentProc = {i, p.conn.size(), currentProcPeople};
+        priorityQueue.push(currentProc);
+    }
+
+    int count = nproc;
+    while(count < population.size()){
+        procPeople q = priorityQueue.top();
+        priorityQueue.pop();
+        People currentPeople = population[count];
+        q.size += numFriend[currentPeople.id];
+        q.peoples.push_back(currentPeople);
+        priorityQueue.push(q);
+        count += 1;
+    }
+    
+    std::vector<std::vector<People>> peopleAssignment(nproc);
+    
+    for(int c = 0; c<nproc; c++){
+        procPeople q = priorityQueue.top();
+        priorityQueue.pop();
+        peopleAssignment[q.procID] = q.peoples; 
+        recvCounts[q.procID] = q.peoples.size();
+    }
+
+    newPopulation = flatten(peopleAssignment);
+}
+
+
 std::vector<float> simulateStep(std::vector<People> &population, std::vector<float> &eval_sample, std::vector<float> &eval_collection, int pid, int childsize){
-    int total = population.size();
+    int totla = population.size();
 
     for (int i = 0; i < childsize; i ++){
         float change = 0.f;
         
         int index = i+childsize*pid;
-        std::vector<int> dg_arr;
-        dg_arr.resize(total);
-        for (int j = 0; j < total; j++){
-            dg_arr[j] = j==i ? 0 : -1;
-        }
         std::set<int> visited = {};
         std::set<int> frontier = {population[index].id};
 
-<<<<<<< HEAD
-        change = BFS_All(frontier, visited, population, eval_sample, eval_collection, change, 0, pid, dg_arr);
-=======
         change = BFS_All(frontier, visited, population, eval_sample, eval_collection, change, 0, pid);
->>>>>>> 278e315b00d9b9b9d22aed3ecb0165814e3285ac
-        std::cerr<< "total change: "<< change  << std::endl;
+
         eval_sample[i] = eval_collection[index] + change;
         //Synchronize update 
 
