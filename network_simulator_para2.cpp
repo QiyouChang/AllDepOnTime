@@ -47,7 +47,6 @@ std::vector<float> simulateStep(std::vector<People> &population, std::vector<flo
         float change = 0.f;
         int node_id = population[i].id;
 
-<<<<<<< HEAD
         std::vector<int> dg_arr;
         dg_arr.resize(total);
         for (int j = 0; j < total; j++){
@@ -60,8 +59,6 @@ std::vector<float> simulateStep(std::vector<People> &population, std::vector<flo
             total_dg_arr[j] = -1;
         }
 
-=======
->>>>>>> 278e315b00d9b9b9d22aed3ecb0165814e3285ac
         int *frontier = (int*)calloc(total, sizeof(int)); //check initialization value
         int *temp_frontier = (int*)calloc(total, sizeof(int));
         int *total_visited = (int*)calloc(total, sizeof(int));
@@ -77,13 +74,8 @@ std::vector<float> simulateStep(std::vector<People> &population, std::vector<flo
             for (int first = 0; first<total ; first++){
                 std::cerr<<"visited: "<<first << " ? "<< frontier[first] << std::endl;
                 if (frontier[first]){
-<<<<<<< HEAD
                     total_visited[first] = 1;
                 }
-=======
-                total_visited[first] = 1;
-            }
->>>>>>> 278e315b00d9b9b9d22aed3ecb0165814e3285ac
             }
 
             for (int index_inf = 0; index_inf < total; index_inf++){     
@@ -94,7 +86,6 @@ std::vector<float> simulateStep(std::vector<People> &population, std::vector<flo
                         // check all connections
                         for (Connection person: conn){
                             // add to frontier if connections are not visited
-<<<<<<< HEAD
                             
                             if ((!total_visited[person.friendID])&&(person.like!=0.f)&&(dg_arr[person.friendID] == -1)){
                                 if(i==0) std::cerr<<"connection person.friendID "<< person.friendID << std::endl;
@@ -103,18 +94,10 @@ std::vector<float> simulateStep(std::vector<People> &population, std::vector<flo
                                 temp_frontier[person.friendID] = 1;
                                 dg_arr[person.friendID] = curr_deg;
                                 
-=======
-                            if ((!total_visited[person.friendID])&&(person.like!=0.f)){
-                                //std::cerr<<"change before: "<< change <<"; pow(DR, curr_deg)"<<pow(DR, curr_deg)<<"; person.like"<<person.like << "; population[person.friendID].eval: "<< population[person.friendID].eval<< std::endl;
-                                change += pow(DR, curr_deg)*person.like*(population[person.friendID].eval);
-                                temp_frontier[person.friendID] = 1;
-                                if(i==0) std::cerr<<"connection person.friendID "<< person.friendID << std::endl;
->>>>>>> 278e315b00d9b9b9d22aed3ecb0165814e3285ac
                             }
                         }
                         }
                     }
-<<<<<<< HEAD
                 frontier[index_inf] = 0;
                 MPI_Allgatherv(dg_arr.data(), total, MPI_INT, total_dg_arr.data(),
                 recvcounts, displs, MPI_INT, comm);
@@ -122,10 +105,6 @@ std::vector<float> simulateStep(std::vector<People> &population, std::vector<flo
                     dg_arr[fi%total] = ((total_dg_arr[fi] != -1) && (dg_arr[fi%total] == -1)) ? total_dg_arr[fi] : std::min(total_dg_arr[fi], dg_arr[fi%total]);
                 }
             }
-=======
-                    frontier[index_inf] = 0;
-                }
->>>>>>> 278e315b00d9b9b9d22aed3ecb0165814e3285ac
                 
 
             //synchronization new frontier and change

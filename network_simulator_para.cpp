@@ -38,10 +38,7 @@ float BFS_All(std::set<int> frontier, std::set<int> visited, std::vector<People>
                 if ((visited.find(connections[i].friendID)==visited.end())&& (connections[i].like!=0.f)&&(dg_arr[i]==-1)){
                         frontier.insert(connections[i].friendID);
                         //std::cerr<<"change before: "<< change <<"; pow(DR, curr_deg)"<<pow(DR, curr_deg)<<"; person.like"<<connections[i].like << "; eval_collection[connections[i].friendID] "<< eval_collection[connections[i].friendID]<< std::endl;
-<<<<<<< HEAD
                         dg_arr[i] = curr_deg;
-=======
->>>>>>> 278e315b00d9b9b9d22aed3ecb0165814e3285ac
                         change += pow(DR, curr_deg)*connections[i].like*(eval_collection[connections[i].friendID]);
                         std::cerr<<"connection person.friendID "<< connections[i].friendID << std::endl;
                         // std::cerr<< change << std::endl;
@@ -69,11 +66,7 @@ std::vector<float> simulateStep(std::vector<People> &population, std::vector<flo
         std::set<int> visited = {};
         std::set<int> frontier = {population[index].id};
 
-<<<<<<< HEAD
         change = BFS_All(frontier, visited, population, eval_sample, eval_collection, change, 0, pid, dg_arr);
-=======
-        change = BFS_All(frontier, visited, population, eval_sample, eval_collection, change, 0, pid);
->>>>>>> 278e315b00d9b9b9d22aed3ecb0165814e3285ac
         std::cerr<< "total change: "<< change  << std::endl;
         eval_sample[i] = eval_collection[index] + change;
         //Synchronize update 
