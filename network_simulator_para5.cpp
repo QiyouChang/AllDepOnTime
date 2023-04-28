@@ -1,11 +1,18 @@
-#include <iostream>
-#include <cilk/cilk.h>
-#include <cilk/cilk_api.h>
-#include <tbb/mutex.h>
-#include <cilk/reducer_opadd.h>
-
+//#include <iostream>
+#include "cilk/cilk.h"
+#include "cilk/cilk_api.h"
+#include <mutex>
+#include "cilk/reducer_opadd.h"
+#include <set>
+#include "common.h"
+#include "timing.h"
+using namespace std;
+std::string inputFile = "./sample1.txt";
+std::string outputFile = "./seqOutputv5.txt";
+std::string outputResult = "./seqResultv5.txt";
 #define DR 0.9
 #define Required_Deg 2
+#define numIterations 5
 #define GRAINULARITY 10
 // Multiset attempt
 // struct Node{
@@ -36,9 +43,11 @@ int bagSize(std::set<People> bag){
     return (int)bag.size();
 }
 
-void bagInsert(std::set<People> bag, People p){
+bool bagInsert(std::set<People> bag, People p){
+    int beforeSize = (int)bag.size();
     bag.insert(p);
-    return;
+    int afterSize = bagSize(bag);
+    return beforeSize == afterSize;
 }
 
 
@@ -60,40 +69,46 @@ std::set<People> bagSplit(std::set<People> bag){
     return new_bag1;
 }
 
-int processLayer(std::set<People> in_bag, std::set<People> out_bag, std::vector<People> population, int depth, People startp){
-    int *total_visited = (int*)calloc(population.size(), sizeof(int));
+float processLayer(std::set<People> in_bag, std::set<People> out_bag, std::vector<People> population, 
+                int depth, People startp, float pastChange){
+    int total_visited[population.size()];
     std::mutex my_mutex;
-    cilk_reduce_opadd<int> change;
+    cilk::reducer_opadd<float> change;
+    change.set_value(pastChange);
     if(depth == 0){
-        return 0;
+        return change.get_value();
     }
     if(bagSize(in_bag) < GRAINULARITY){
         for(People currentp: in_bag){
-            Connection pconn = currentp.conn;
-            cilk_for(int i = 0; i < pconn.size(); i++){
+            std::vector<Connection> pconn = currentp.conn;
+            cilk_for (int i = 0; i < pconn.size(); i++){
                 int neighorID = pconn[i].friendID;
                 if(total_visited[neighborID] == 0){
                     my_mutex.lock();
                     total_visited[neighborID] = 1;
-                    bagInsert(out_bag, population[friendID]);
+                    bool seenBefore = bagInsert(out_bag, population[friendID]);
+                    
                     my_mutex.unlock();
-                    change += pow(DR, depth) * pconn[i].like * total_visited[neighborID].eval;
+                    if(!seenBefore){
+                        change += pow(DR, depth) * pconn[i].like * total_visited[neighborID].eval;
+                    }
                 }
             }
         }
         return 0;
     }
-    new_bag = bagSplit(in_bag);
-    cilk_spawn processLayer(new_bag, out_bag, population, depth);
-    processLayer(new_bag, out_bag, population, depth);
+    std::set<People> new_bag = bagSplit(in_bag);
+    cilk_spawn processLayer(new_bag, out_bag, population, depth, startp, pastChange);
+    processLayer(new_bag, out_bag, population, depth, startp, pastChange);
     cilk_sync;
-    return change;
+    std::set<People> nextOut;
+    float val = processLayer(out_bag, nextOut, population, depth-1, startp, change.get_value());
+    return val;
 }
 
 int main(int argc, char *argv[]) {
     int pid;
     int nproc;
-
 
     std::vector<People> population;
 
@@ -104,15 +119,15 @@ int main(int argc, char *argv[]) {
     Timer totalSimulationTimer;
 
     for (int i = 0; i < numIterations; i++){
-        for (int j = 0; j < population.size(); j++){
+        cilk_for (int j = 0; j < population.size(); j++){
             People currentp = population[j];
             std::set<People> in_bag;
             std::set<People> out_bag;
-            for(int k = 0; k < currentp.conn.size(); k++){
+            cilk_for(int k = 0; k < currentp.conn.size(); k++){
                 int neighborID = currentp.conn[k];
                 in_bag.insert(population[neighborID]);
             }
-            population[j].eval = processLayer(in_bag, out_bag, population, Required_Deg, population[i]);
+            population[j].eval = processLayer(in_bag, out_bag, population, Required_Deg, population[j]);
         }
     }
 

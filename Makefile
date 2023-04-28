@@ -1,5 +1,5 @@
 OUTPUTDIR := bin/
-
+#module load openmpi/4.0.2-gcc8.3.1
 CFLAGS := -std=c++14 -fvisibility=hidden -lpthread -Wall -Wextra
 
 ifeq (,$(CONFIGURATION))
@@ -34,8 +34,8 @@ final-$(CONFIGURATION)-v3: $(HEADERS) ./network_simulator_para.cpp
 final-$(CONFIGURATION)-v4: $(HEADERS) ./network_simulator_para2.cpp
 	$(CXX) -o $@ $(CFLAGS) ./network_simulator_para2.cpp
 
-final-$(CONFIGURATION)-v5: $(HEADERS) ./network_simulator_para3.cpp
-	$(CXX) -o $@ $(CFLAGS) ./network_simulator_para3.cpp
+final-$(CONFIGURATION)-v5: $(HEADERS) ./network_simulator_para5.cpp
+	$(CXX) -o $@ $(CFLAGS) ./network_simulator_para5.cpp -fcilkplus
 clean:
 	rm -rf ./final-$(CONFIGURATION)*
 
