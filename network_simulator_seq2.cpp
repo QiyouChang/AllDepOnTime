@@ -8,11 +8,11 @@
 #include <set>
 
 std::string inputFile = "./sample1.txt";
-std::string outputFile = "./seqOutputv2.txt";
-std::string outputResult = "./seqResultv2.txt";
+std::string outputFile = "./seqOutputv1.txt";
+std::string outputResult = "./seqResultv1.txt";
 #define numIterations 5
 #define DR 0.9
-#define Required_Deg 2
+#define Required_Deg 6
 
 
 float BFS_All(std::set<int> frontier, std::set<int> visited, std::vector<People> &population, float change, int curr_deg, std::vector<int> &dg_arr){
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
     if(pid == 0){
         //saveToFile(options.outputFile, population);
         double totalSimulationTime = totalSimulationTimer.elapsed();
-        printf("total simulation time: %.6fs\n", totalSimulationTime);
+        printf("seq - total simulation time: %.6fs\n", totalSimulationTime);
         saveToFile(outputFile, population);
         saveToResult(outputResult, population);
     }
