@@ -201,6 +201,8 @@
 //     MPI_Finalize();
 // }
 
+
+//1D partition BFS
 #include "common.h"
 #include "timing.h"
 #include <iostream>
@@ -215,7 +217,7 @@ std::string outputFile = "./seqOutputv3.txt";
 std::string outputResult = "./seqResultv3.txt";
 #define numIterations 5
 #define DR 0.9
-#define Required_Deg 2
+#define Required_Deg 6
 
 bool check_frontier(int *frontier, int length){
     for (int i = 0; i < length; i++){
@@ -382,7 +384,7 @@ int main(int argc, char *argv[]) {
     if(pid == 0){
         //saveToFile(options.outputFile, population);
         double totalSimulationTime = totalSimulationTimer.elapsed();
-        printf("total simulation time: %.6fs\n", totalSimulationTime);
+        printf("para2 - total simulation time: %.6fs\n", totalSimulationTime);
         saveToFile(outputFile, population);
         saveToResult(outputResult, population);
     }
