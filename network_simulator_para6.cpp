@@ -45,7 +45,7 @@ std::set<People> bagSplit(std::set<People> bag){
     return new_bag1;
 }
 
-float processLayer(std::set<People> in_bag, std::set<People> out_bag, std::vector<People> population, 
+float processLayer(std::set<People> in_bag,  std::vector<People> population, 
                 int depth, People startp, float pastChange){
     int total_visited[population.size()];
     std::mutex my_mutex;
@@ -72,13 +72,15 @@ float processLayer(std::set<People> in_bag, std::set<People> out_bag, std::vecto
         }
         return 0;
     }
+    std::set<People> out_bag1, out_bag2;
     std::set<People> new_bag = bagSplit(in_bag);
-    cilk_spawn processLayer(new_bag, out_bag, population, depth, startp, pastChange);
-    processLayer(new_bag, out_bag, population, depth, startp, pastChange);
+    cilk_spawn processLayer(new_bag, out_bag1, population, depth, startp, pastChange);
+    processLayer(in_bag, out_bag2, population, depth, startp, pastChange);
     cilk_sync;
     std::set<People> nextOut;
-    float val = processLayer(out_bag, nextOut, population, depth-1, startp, change.get_value());
-    return val;
+    float val1 = processLayer(out_bag1, nextOut, population, depth-1, startp, change.get_value());
+    float val2 = processLayer(out_bag2, nextOut, population, depth-1, startp, change.get_value());
+    return val1 + val2;
 }
 
 int main(int argc, char *argv[]) {
@@ -97,12 +99,11 @@ int main(int argc, char *argv[]) {
         cilk_for (int j = 0; j < population.size(); j++){
             People currentp = population[j];
             std::set<People> in_bag;
-            std::set<People> out_bag;
             cilk_for(int k = 0; k < currentp.conn.size(); k++){
                 int neighborID = currentp.conn[k];
                 in_bag.insert(population[neighborID]);
             }
-            population[j].eval = processLayer(in_bag, out_bag, population, Required_Deg, population[j]);
+            population[j].eval = processLayer(in_bag, population, Required_Deg, population[j]);
         }
     }
 
