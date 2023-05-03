@@ -55,7 +55,7 @@ float processLayer(std::set<People> in_bag,  std::vector<People> population,
         return change.get_value();
     }
     if(bagSize(in_bag) < GRAINULARITY){
-        for(People currentp: in_bag){
+        cilk_for(People currentp: in_bag){
             std::vector<Connection> pconn = currentp.conn;
             cilk_for (int i = 0; i < pconn.size(); i++){
                 int neighorID = pconn[i].friendID;
@@ -72,12 +72,12 @@ float processLayer(std::set<People> in_bag,  std::vector<People> population,
         }
         return 0;
     }
-    std::set<People> out_bag1, out_bag2;
     std::set<People> new_bag = bagSplit(in_bag);
-    cilk_spawn processLayer(new_bag, out_bag1, population, depth, startp, pastChange);
-    processLayer(in_bag, out_bag2, population, depth, startp, pastChange);
+    cilk_spawn processLayer(new_bag, population, depth, startp, pastChange);
+    processLayer(in_bag, population, depth, startp, pastChange);
     cilk_sync;
     std::set<People> nextOut;
+    std::set<People> out_bag1, out_bag2;
     float val1 = processLayer(out_bag1, nextOut, population, depth-1, startp, change.get_value());
     float val2 = processLayer(out_bag2, nextOut, population, depth-1, startp, change.get_value());
     return val1 + val2;
@@ -114,7 +114,6 @@ int main(int argc, char *argv[]) {
         saveToResult(outputResult, population);
     }
 }
-
 
 
 
