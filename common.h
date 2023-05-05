@@ -16,8 +16,8 @@
 #include <algorithm>
 
 struct StartupOptions {
-  int numIterations = 1;
-  int numPeople = 5;
+  int numIterations = 5;
+  int numPeople = 500;
   std::string outputFile;
   std::string inputFile;
 };
@@ -59,7 +59,6 @@ float findAverage(std::vector<Connection> c){
   for(size_t x = 0; x < c.size(); x++){
     count += c[x].like;
   }
-  //std::cerr<<"new connection count is:"<< count << "size is: " << (int)c.size() << "result is: " << count / c.size()<< "\n";
   return count / (int)c.size();
 }
 
@@ -81,15 +80,11 @@ inline void randomizedPeople(std::vector<People> &population, int deleteNum){
     //add a connection by establishing a connection from like of 0 to average of all connections.
     if(abs(conn[1].like) < 0.001f){
       newConnection.like = findAverage(conn);
-      std::cerr<<"new connection like is:"<< newConnection.like << "\n";
-      std::cerr<<"reach here for node" << conn[1].friendID << "the current node is: " << i << "\n";
       newConnection.friendID = conn[1].friendID;
       population[i].conn[newConnection.friendID] = newConnection;
-      
       newConnection.friendID = i;
       addConnection[conn[1].friendID].push_back(newConnection);
     }
-     std::cerr<<"reach here the current node is: " << i << "\n";
     //remove deleteNum number of connections that have largest like/dislike 
     for(size_t k = population.size()-1; k >= population.size() - deleteNum; k--){
       newConnection.like = 0;
@@ -98,9 +93,7 @@ inline void randomizedPeople(std::vector<People> &population, int deleteNum){
       newConnection.friendID = i;
       reduceConnection[conn[k].friendID].push_back(newConnection);
     }
-    //std::cerr<<"reach here the current node is: " << i  << "\n";
   }  
-  std::cerr<<"end first loop 注意 " << "\n";
   for(size_t i = 0; i < population.size(); i++){
     std::vector<Connection> add = addConnection[i];
     for(size_t p = 0; p < add.size(); p++){
@@ -114,15 +107,12 @@ inline void randomizedPeople(std::vector<People> &population, int deleteNum){
       population[i].conn[val.friendID].like = 0;
     }
   }
-  std::cerr<<"end first loop 注意aaaaaaa" << "\n";
 }
 
 // These functions are marked inline only because we want to define them in the
 // header file.
 inline bool loadFromFile(std::string fileName,
                          std::vector<People> &population) {
-  // std::fstream newfile;
-  // newfile.open("sample1.txt");
 
   std::ifstream f(fileName);
   assert((bool)f && "Cannot open input file");
@@ -141,6 +131,7 @@ inline bool loadFromFile(std::string fileName,
         person.conn.push_back(conn);
         count += 1;
     }
+    person.eval = (rand()%10 + 0.0)/10;
     person.id = personID;
     personID += 1;
     population.push_back(person);
