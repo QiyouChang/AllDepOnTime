@@ -11,18 +11,16 @@
 std::string inputFile = "./sample1.txt";
 std::string outputFile = "./seqOutputv4.txt";
 std::string outputResult = "./seqResultv4.txt";
-#define numIterations 10
+#define numIterations 5
 #define DR 0.9
-#define Required_Deg 2
+#define Required_Deg 6
 
 float BFS_All(std::set<int> frontier, std::set<int> visited, std::vector<People> &population,std::vector<float> &eval_sample, std::vector<float> &eval_collection, float change, int curr_deg, int pid){
     
    if ((frontier.size() == 0) || (curr_deg == Required_Deg)){
-        //std::cerr<< "the change is: " << change<< "\n";
         return change;
     }else{
         
-        //std::cerr<< "Ever reached here?";
         size_t size = frontier.size();
 
         //pop the top person
@@ -37,13 +35,11 @@ float BFS_All(std::set<int> frontier, std::set<int> visited, std::vector<People>
         std::vector<Connection> connections = person.conn;
 
         for (size_t i = 0 ; i < connections.size(); i++){
-                if ((visited.find(connections[i].friendID)==visited.end())&& (connections[i].like!=0.f)){
-                        frontier.insert(connections[i].friendID);
-                        change += pow(DR, curr_deg)*connections[i].like*(eval_collection[connections[i].friendID]);
-                        //change += connections[i].like;
-                    }
-                }
-
+            if ((visited.find(connections[i].friendID)==visited.end())&& (connections[i].like!=0.f)){
+                frontier.insert(connections[i].friendID);
+                change += pow(DR, curr_deg)*connections[i].like*(eval_collection[connections[i].friendID]);
+            }
+        }
        return BFS_All(frontier, visited, population, eval_sample, eval_collection,change, curr_deg+1, pid);
     }
 }
@@ -202,14 +198,9 @@ int main(int argc, char *argv[]) {
         eval_sample = simulateStep(population, eval_sample, eval_collection, pid, childsize);
         MPI_Allgatherv(eval_sample.data(), childsize, MPI_FLOAT, eval_collection.data(), 
         recvcounts, displs, MPI_FLOAT, comm);
-        // for (int j = 0; j < total; j++){
-        //     printf("%f\n", eval_collection[j]);
-        // }
-
     }
 
     if(pid == 0){
-        //saveToFile(options.outputFile, population);
         double totalSimulationTime = totalSimulationTimer.elapsed();
         printf("total simulation time: %.6fs\n", totalSimulationTime);
         for (int i = 0; i < total; i++){
