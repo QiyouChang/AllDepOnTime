@@ -9,8 +9,8 @@
 #include <set>
 
 std::string inputFile = "./sample1.txt";
-std::string outputFile = "./seqOutputv3.txt";
-std::string outputResult = "./seqResultv3.txt";
+std::string outputFile = "./seqOutputv4.txt";
+std::string outputResult = "./seqResultv4.txt";
 #define numIterations 5
 #define DR 0.9
 #define Required_Deg 6
@@ -22,11 +22,9 @@ bool check_frontier(int *frontier, int length){
     return false;
 }
 
-
 std::vector<float> simulateStep(std::vector<People> &population, std::vector<float> &eval_collection, int pid, int nproc, int childsize, int* displs, int* recvcounts, int* displs2, int* recvcounts2){
     int total = population.size();
     MPI_Comm comm = MPI_COMM_WORLD;
-
 
     for (int i = 0; i < total; i++){
         int curr_deg = 0;
@@ -95,7 +93,6 @@ std::vector<float> simulateStep(std::vector<People> &population, std::vector<flo
         //Synchronize update
 
     }
-
 
     return eval_collection;
 }
