@@ -19,7 +19,6 @@ std::vector<People> simulateStep(std::vector<People> &population){
     int total = population.size();
     
     //Iterate all people within the population and sum up all of likes and update it to others
-    //for (People person:population){
     for(size_t i = 0; i < total; i ++){
         People person = population[i];
         std::vector<Connection> connections = person.conn;
@@ -27,10 +26,7 @@ std::vector<People> simulateStep(std::vector<People> &population){
         for(Connection individual: connections){
             change += individual.like;
         }
-        //std::cerr<< "before of simulate Step " <<  person.eval << "\n";
         population[i].eval += change;
-        //person.eval += change;
-        //std::cerr<< "after of simulate Step " <<  person.eval << "\n";
     }
     return population;
 }
@@ -38,31 +34,24 @@ std::vector<People> simulateStep(std::vector<People> &population){
 int main(int argc, char *argv[]) {
     int pid;
     int nproc;
-    // MPI_Status status;
-    // MPI_Comm comm = MPI_COMM_WORLD;
-     std::cerr << "reach here!" << "\n";
     // Initialize MPI
     MPI_Init(&argc, &argv);
     // Get process rank
     MPI_Comm_rank(MPI_COMM_WORLD, &pid);
     // Get total number of processes specificed at start of run
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
-    //StartupOptions options = parseOptions(argc, argv);
+   
     std::vector<People> population;
     if (pid == 0) {
-        //loadFromFile(options.inputFile, population);
         loadFromFile(inputFile, population);
-   }
+    }
 
-
-   Timer totalSimulationTimer;
-    //TO DO: fill in the steps
+    Timer totalSimulationTimer;
     for (int i = 0; i < numIterations; i++) {
         population = simulateStep(population);
     }
 
     if(pid == 0){
-        //saveToFile(options.outputFile, population);
         double totalSimulationTime = totalSimulationTimer.elapsed();
         printf("total simulation time: %.6fs\n", totalSimulationTime);
         saveToFile(outputFile, population);
