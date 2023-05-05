@@ -6,10 +6,11 @@
 #include <string>
 #include <cmath>
 #include <set>
-//partition people 
+
+
 std::string inputFile = "./sample1.txt";
-std::string outputFile = "./seqOutputv2.txt";
-std::string outputResult = "./seqResultv2.txt";
+std::string outputFile = "./seqOutputv3.txt";
+std::string outputResult = "./seqResultv3.txt";
 #define numIterations 5
 #define DR 0.9
 #define Required_Deg 6
