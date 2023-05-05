@@ -8,8 +8,8 @@
 #include <set>
 
 std::string inputFile = "./sample1.txt";
-std::string outputFile = "./seqOutputv1.txt";
-std::string outputResult = "./seqResultv1.txt";
+std::string outputFile = "./seqOutputv2.txt";
+std::string outputResult = "./seqResultv2.txt";
 #define numIterations 5
 #define DR 0.9
 #define Required_Deg 6
@@ -17,11 +17,9 @@ std::string outputResult = "./seqResultv1.txt";
 
 float BFS_All(std::set<int> frontier, std::set<int> visited, std::vector<People> &population, float change, int curr_deg, std::vector<int> &dg_arr){
     if ((frontier.size() == 0) || (curr_deg == Required_Deg)){
-        //std::cerr<< "the change is: " << change<< "\n";
         return change;
     }else{
-        
-        //std::cerr<< "Ever reached here?";
+    
         size_t size = frontier.size();
 
         //pop the top person
@@ -36,36 +34,13 @@ float BFS_All(std::set<int> frontier, std::set<int> visited, std::vector<People>
         std::vector<Connection> connections = person.conn;
 
         for (size_t i = 0 ; i < connections.size(); i++){
-                if ((visited.find(connections[i].friendID)==visited.end())&& (connections[i].like!=0.f)&&(dg_arr[i]==-1)){
-                        dg_arr[i] = curr_deg;
-                        frontier.insert(connections[i].friendID);
-                        change += pow(DR, curr_deg)*connections[i].like*(population[connections[i].friendID].eval);
-                        //change += connections[i].like;
-                    }
-                }
+            if ((visited.find(connections[i].friendID)==visited.end())&& (connections[i].like!=0.f)&&(dg_arr[i]==-1)){
+                dg_arr[i] = curr_deg;
+                frontier.insert(connections[i].friendID);
+                change += pow(DR, curr_deg)*connections[i].like*(population[connections[i].friendID].eval);
+            }
+        }
         return BFS_All(frontier, visited, population, change, curr_deg+1, dg_arr);
-
-    //     for (int turn = 0; turn < size; turn++){
-
-    //         int curr_id = *frontier.begin();
-    //         //std::cerr<< curr_id << "id \n";
-    //         frontier.erase(frontier.begin());
-    //         People person = population[curr_id];
-    //         std::vector<Connection> connections = person.conn;
-    //         //not visited yet
-    //         if (visited.find(curr_id)==visited.end()){
-    //             for (size_t i = 0 ; i < connections.size(); i++){
-    //                 //not visited yet and still connected
-    //                 if ((visited.find(connections[i].friendID)==visited.end())&& (abs(connections[i].like)>0.0001f)){
-                        
-    //                     new_frontier.insert(connections[i].friendID);
-    //                     change += pow(DR, curr_deg)*connections[i].like*(population[connections[i].friendID].eval);
-    //                 }
-    //             }
-    //         }
-    //         visited.insert(curr_id);
-    //     }
-    //    return BFS_All(new_frontier, visited, population, change, curr_deg+1);
     }
 }
 
@@ -84,7 +59,6 @@ std::vector<float> simulateStep(std::vector<People> &population, std::vector<flo
         std::set<int> visited = {};
         std::set<int> frontier = {person.id};
         change = BFS_All(frontier, visited, population, change, 0, dg_arr);
-        //printf("%f, %f, %f, %f\n",change, eval_collection[i], population[i].conn[0].like, population[i].conn[1].like);
         eval_collection[i] = population[i].eval + change;
         //Asynchronize Update
     }
@@ -92,21 +66,9 @@ std::vector<float> simulateStep(std::vector<People> &population, std::vector<flo
 }
 
 int main(int argc, char *argv[]) {
-    int pid;
-    int nproc;
-    //MPI_Status status;
-    //MPI_Comm comm = MPI_COMM_WORLD;
 
-    // Initialize MPI
-    MPI_Init(&argc, &argv);
-    // Get process rank
-    MPI_Comm_rank(MPI_COMM_WORLD, &pid);
-    // Get total number of processes specificed at start of run
-    MPI_Comm_size(MPI_COMM_WORLD, &nproc);
-    //StartupOptions options = parseOptions(argc, argv);
     std::vector<People> population;
     if (pid == 0) {
-        //loadFromFile(options.inputFile, population);
         loadFromFile(inputFile, population);
     }
 
@@ -114,9 +76,7 @@ int main(int argc, char *argv[]) {
     eval_collection.resize(population.size());
     for (int i = 0; i < eval_collection.size(); i++){
         eval_collection[i] = population[i].eval;
-        //printf("%f, %f, %f\n", eval_collection[i], population[i].conn[0].like, population[i].conn[1].like);
     }
-
 
     Timer totalSimulationTimer;
     for (int i = 0; i < numIterations; i++) {
@@ -124,13 +84,9 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < eval_collection.size(); i++){
             population[i].eval = eval_collection[i];
         }
-        // for (int j = 0; j < population.size(); j++){
-        //     printf("%f\n", eval_collection[j]);
-        // }
     }
 
     if(pid == 0){
-        //saveToFile(options.outputFile, population);
         double totalSimulationTime = totalSimulationTimer.elapsed();
         printf("seq - total simulation time: %.6fs\n", totalSimulationTime);
         saveToFile(outputFile, population);
