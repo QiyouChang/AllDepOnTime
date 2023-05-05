@@ -9,8 +9,8 @@
 #include <queue>
 
 std::string inputFile = "./sample1.txt";
-std::string outputFile = "./seqOutputv4.txt";
-std::string outputResult = "./seqResultv4.txt";
+std::string outputFile = "./seqOutputv5.txt";
+std::string outputResult = "./seqResultv5.txt";
 #define numIterations 5
 #define DR 0.9
 #define Required_Deg 6
@@ -20,9 +20,7 @@ float BFS_All(std::set<int> frontier, std::set<int> visited, std::vector<People>
    if ((frontier.size() == 0) || (curr_deg == Required_Deg)){
         return change;
     }else{
-        
         size_t size = frontier.size();
-
         //pop the top person
         int curr_id = *frontier.begin();
         //erase the person
@@ -62,7 +60,6 @@ public:
     }
 };
 
-
 template<typename T>
 std::vector<T> flatten(std::vector<std::vector<T>> const &vec)
 {
@@ -72,7 +69,6 @@ std::vector<T> flatten(std::vector<std::vector<T>> const &vec)
     }
     return flattened;
 }
-
 
 // Input: population: the list of people read from file 
 // Input: number of processors 
@@ -129,7 +125,6 @@ void prediction(std::vector<People> &population,int nproc, std::vector<int> &rec
 
     newPopulation = flatten(peopleAssignment);
 }
-
 
 std::vector<float> simulateStep(std::vector<People> &population, std::vector<float> &eval_sample, std::vector<float> &eval_collection, int pid, int childsize){
     int totla = population.size();
