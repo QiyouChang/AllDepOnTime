@@ -1,3 +1,4 @@
+//OpenMP Attempt 1
 #include "common.h"
 #include "timing.h"
 #include <iostream>
@@ -39,19 +40,15 @@ void BFS_OneLayer(std::vector<People> &population, std::set<int> currentFrontier
 
 void BFS_All(std::vector<People> &population){
     while ((frontier.size() != 0) && (curr_deg != Required_Deg)){
-        
         size_t size = frontier.size(); 
-
         //pop the top person
         int curr_id = *frontier.begin(); 
         //erase the person
         frontier.erase(frontier.begin()); 
-
         //find the person
         People person = population[curr_id]; 
         //add to visited 
         visited.insert(curr_id); 
-
         //find out neighbors
         std::vector<Connection> connections = person.conn; 
 
