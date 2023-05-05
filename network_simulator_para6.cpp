@@ -1,120 +1,123 @@
-//#include <iostream>
-#include "cilk/cilk.h"
-#include "cilk/cilk_api.h"
-#include <mutex>
-#include "cilk/reducer_opadd.h"
-#include <set>
 #include "common.h"
 #include "timing.h"
-using namespace std;
-std::string inputFile = "./sample1.txt";
-std::string outputFile = "./seqOutputv5.txt";
-std::string outputResult = "./seqResultv5.txt";
+#include <iostream>
+#include <vector>
+#include <string>
+#include <cmath>
+#include <set>
+#include <queue>
+#include <omp.h>
+
+
+std::string inputFile = "./sample1.txt"; 
+std::string outputFile = "./seqOutputv6.txt"; 
+std::string outputResult = "./seqResultv6.txt";
+#define numIterations 5
 #define DR 0.9
 #define Required_Deg 6
-#define numIterations 5
-#define GRAINULARITY 10
+#define nproc 4
 
-int bagSize(std::set<People> bag){
-    return (int)bag.size();
-}
+std::vector<int> dg_arr;
+int curr_deg = 0;
+std::set<int> frontier;
+std::set<int> visited; 
+float change = 0.0; 
 
-bool bagInsert(std::set<People> bag, People p){
-    int beforeSize = (int)bag.size();
-    bag.insert(p);
-    int afterSize = bagSize(bag);
-    return beforeSize == afterSize;
-}
-
-
-std::set<People> bagSplit(std::set<People> bag){
-    std::set<People> new_bag1;
-    std::set<People> new_bag2;
-    int size = bagSize(bag);
-    int count = 0;
-    for(auto it = bag.begin(); it != bag.end(); it++){
-        if(count < size/2){
-            new_bag1.insert(*it);
-            count += 1;
-        } else{
-            new_bag2.insert(*it);
+void BFS_OneLayer(std::vector<People> &population, std::set<int> currentFrontier, int degree){
+    std::set<int> newFrontier;
+    #pragma omp parallel for
+    for(int i = 0; i < currentFrontier.size(); i++){
+        #pragma omp critical
+        {
+            int curr_id = *currentFrontier.begin();
+            currentFrontier.erase(currentFrontier.begin());
+            People person = population[curr_id];
         }
-       
     }
-    bag = new_bag2;
-    return new_bag1;
 }
 
-float processLayer(std::set<People> in_bag,  std::vector<People> population, 
-                int depth, People startp, float pastChange){
-    int total_visited[population.size()];
-    std::mutex my_mutex;
-    cilk::reducer_opadd<float> change;
-    change.set_value(pastChange);
-    if(depth == 0){
-        return change.get_value();
-    }
-    if(bagSize(in_bag) < GRAINULARITY){
-        cilk_for(People currentp: in_bag){
-            std::vector<Connection> pconn = currentp.conn;
-            cilk_for (int i = 0; i < pconn.size(); i++){
-                int neighorID = pconn[i].friendID;
-                if(total_visited[neighborID] == 0){
-                    my_mutex.lock();
-                    total_visited[neighborID] = 1;
-                    bool seenBefore = bagInsert(out_bag, population[friendID]);
-                    my_mutex.unlock();
-                    if(!seenBefore){
-                        change += pow(DR, depth) * pconn[i].like * total_visited[neighborID].eval;
-                    }
+
+void BFS_All(std::vector<People> &population){
+    while ((frontier.size() != 0) && (curr_deg != Required_Deg)){
+        
+        size_t size = frontier.size(); 
+
+        //pop the top person
+        int curr_id = *frontier.begin(); 
+        //erase the person
+        frontier.erase(frontier.begin()); 
+
+        //find the person
+        People person = population[curr_id]; 
+        //add to visited 
+        visited.insert(curr_id); 
+
+        //find out neighbors
+        std::vector<Connection> connections = person.conn; 
+
+        #pragma omp parallel for
+        for (size_t i = 0 ; i < connections.size();  i++){
+            if ((visited.find(connections[i].friendID)==visited.end())&& (connections[i].like!=0.f)&&(dg_arr[i]==-1)){
+                #pragma omp critical
+                {
+                    dg_arr[i] = curr_deg; 
+                    frontier.insert(connections[i].friendID); 
                 }
+                change += pow(DR, curr_deg)*connections[i].like*(population[connections[i].friendID].eval); 
             }
         }
-        return 0;
+        //#pragma omp barrier
+        
+        curr_deg += 1; 
     }
-    std::set<People> new_bag = bagSplit(in_bag);
-    cilk_spawn processLayer(new_bag, population, depth, startp, pastChange);
-    processLayer(in_bag, population, depth, startp, pastChange);
-    cilk_sync;
-    std::set<People> nextOut;
-    std::set<People> out_bag1, out_bag2;
-    float val1 = processLayer(out_bag1, nextOut, population, depth-1, startp, change.get_value());
-    float val2 = processLayer(out_bag2, nextOut, population, depth-1, startp, change.get_value());
-    return val1 + val2;
+}
+
+std::vector<float> simulateStep(std::vector<People> &population, std::vector<float> &eval_collection){
+    // Sequential Implementation that simply computes all weights of people 
+    // and try adding them together
+    int total = population.size();
+    
+    #pragma omp parallel for
+    for(int i = 0; i < total;  i ++){
+        change = 0.f; 
+        dg_arr.resize(total); 
+        for (int j = 0;  j < total; j++){
+            dg_arr[j] = j==i ? 0 : -1; 
+        }
+        People person = population[i]; 
+        visited = {}; 
+        frontier = {person.id}; 
+        curr_deg = 0; 
+        BFS_All(population); 
+        eval_collection[i] = population[i].eval + change; 
+        //Asynchronize Update
+    }
+    return eval_collection; 
 }
 
 int main(int argc, char *argv[]) {
-    int pid;
-    int nproc;
+   
+    std::vector<People> population; 
+    
+    loadFromFile(inputFile, population); 
+    std::vector<float> eval_collection; 
+    eval_collection.resize(population.size()); 
+    //omp_set_num_threads(10); 
+    for (int i = 0; i < eval_collection.size();  i++){
+        eval_collection[i] = population[i].eval; 
+    }
 
-    std::vector<People> population;
-
-    //load from input file
-    loadFromFile(inputFile, population);
-    int total = population.size();
-
-    Timer totalSimulationTimer;
-
-    for (int i = 0; i < numIterations; i++){
-        cilk_for (int j = 0; j < population.size(); j++){
-            People currentp = population[j];
-            std::set<People> in_bag;
-            cilk_for(int k = 0; k < currentp.conn.size(); k++){
-                int neighborID = currentp.conn[k];
-                in_bag.insert(population[neighborID]);
-            }
-            population[j].eval = processLayer(in_bag, population, Required_Deg, population[j]);
+    Timer totalSimulationTimer; 
+    for (int i = 0;i < numIterations; i++) {
+       
+        eval_collection = simulateStep(population, eval_collection); 
+        for (int i = 0; i < eval_collection.size();  i++){
+            population[i].eval = eval_collection[i]; 
         }
     }
 
-    if(pid == 0){
-        double totalSimulationTime = totalSimulationTimer.elapsed();
-        printf("total simulation time: %.6fs\n", totalSimulationTime);
-        saveToFile(outputFile, population);
-        saveToResult(outputResult, population);
-    }
+    double totalSimulationTime = totalSimulationTimer.elapsed(); 
+    printf("total simulation time: %.6fs\n", totalSimulationTime); 
+    saveToFile(outputFile, population); 
+    saveToResult(outputResult, population); 
 }
-
-
-
-
