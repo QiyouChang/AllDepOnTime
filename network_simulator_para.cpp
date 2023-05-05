@@ -17,7 +17,6 @@ std::string outputResult = "./seqResultv2.txt";
 float BFS_All(std::set<int> frontier, std::set<int> visited, std::vector<People> &population,std::vector<float> &eval_sample, std::vector<float> &eval_collection, float change, int curr_deg, int pid, std::vector<int> &dg_arr){
     
    if ((frontier.size() == 0) || (curr_deg == Required_Deg)){
-        ////std::cerr<< "the change is: " << change<< "\n";
         return change;
     }else{
         
@@ -35,17 +34,12 @@ float BFS_All(std::set<int> frontier, std::set<int> visited, std::vector<People>
         std::vector<Connection> connections = person.conn;
 
         for (size_t i = 0 ; i < connections.size(); i++){
-                if ((visited.find(connections[i].friendID)==visited.end())&& (connections[i].like!=0.f)&&(dg_arr[i]==-1)){
-                        frontier.insert(connections[i].friendID);
-                        ////std::cerr<<"change before: "<< change <<"; pow(DR, curr_deg)"<<pow(DR, curr_deg)<<"; person.like"<<connections[i].like << "; eval_collection[connections[i].friendID] "<< eval_collection[connections[i].friendID]<< std::endl;
-                        dg_arr[i] = curr_deg;
-                        change += pow(DR, curr_deg)*connections[i].like*(eval_collection[connections[i].friendID]);
-                        //std::cerr<<"connection person.friendID "<< connections[i].friendID << std::endl;
-                        // //std::cerr<< change << std::endl;
-                        ////std::cerr<<"change after: "<< change << std::endl;
-                        //change += connections[i].like;
-                    }
-                }
+            if ((visited.find(connections[i].friendID)==visited.end())&& (connections[i].like!=0.f)&&(dg_arr[i]==-1)){
+                frontier.insert(connections[i].friendID);
+                dg_arr[i] = curr_deg;
+                change += pow(DR, curr_deg)*connections[i].like*(eval_collection[connections[i].friendID]);
+            }
+        }
 
        return BFS_All(frontier, visited, population, eval_sample, eval_collection,change, curr_deg+1, pid, dg_arr);
     }
@@ -56,7 +50,6 @@ std::vector<float> simulateStep(std::vector<People> &population, std::vector<flo
 
     for (int i = 0; i < childsize; i ++){
         float change = 0.f;
-        
         int index = i+childsize*pid;
         std::vector<int> dg_arr;
         dg_arr.resize(total);
@@ -65,11 +58,8 @@ std::vector<float> simulateStep(std::vector<People> &population, std::vector<flo
         }
         std::set<int> visited = {};
         std::set<int> frontier = {population[index].id};
-
         change = BFS_All(frontier, visited, population, eval_sample, eval_collection, change, 0, pid, dg_arr);
-        //std::cerr<< "total change: "<< change  << std::endl;
         eval_sample[i] = eval_collection[index] + change;
-        //Synchronize update 
 
     }
     return eval_sample;
@@ -117,20 +107,14 @@ int main(int argc, char *argv[]) {
         eval_collection[i] = population[i].eval;
     }
 
-
     Timer totalSimulationTimer;
     for (int i = 0; i < numIterations; i++){
         eval_sample = simulateStep(population, eval_sample, eval_collection, pid, childsize);
         MPI_Allgatherv(eval_sample.data(), childsize, MPI_FLOAT, eval_collection.data(), 
         recvcounts, displs, MPI_FLOAT, comm);
-        // for (int j = 0; j < total; j++){
-        //     printf("%f\n", eval_collection[j]);
-        // }
-
     }
 
     if(pid == 0){
-        //saveToFile(options.outputFile, population);
         double totalSimulationTime = totalSimulationTimer.elapsed();
         printf("parar 1 - total simulation time: %.6fs\n", totalSimulationTime);
         for (int i = 0; i < total; i++){
